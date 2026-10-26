@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
-import { colors, confidenceColor, radius, shadow, spacing } from '../constants/theme';
+import { confidenceLevel } from './ConfidenceBar';
 
-export default function HistoryItem({ record, onPress, onDelete }) {
+export default function HistoryItem({ record, onDelete }) {
   const best = record.matches[0];
   const date = new Date(record.createdAt).toLocaleDateString(undefined, {
     day: 'numeric',
@@ -12,89 +12,31 @@ export default function HistoryItem({ record, onPress, onDelete }) {
   });
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${best.commonName}, scanned ${date}`}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      <Image source={{ uri: record.imageUri }} style={styles.thumb} />
-      <View style={styles.body}>
-        <Text style={styles.common} numberOfLines={1}>
-          {best.commonName}
-        </Text>
-        <Text style={styles.scientific} numberOfLines={1}>
-          {best.scientificName}
-        </Text>
-        <View style={styles.meta}>
-          <Text style={[styles.confidence, { color: confidenceColor(best.confidence) }]}>
-            {best.confidence.toFixed(0)}% match
-          </Text>
-          <Text style={styles.date}>{date}</Text>
-        </View>
-      </View>
+    <div className="history-item">
+      <Link href={`/plant?id=${encodeURIComponent(record.id)}`} className="history-item__link">
+        {/* eslint-disable-next-line @next/next/no-img-element -- local data URL thumbnail */}
+        <img src={record.imageDataUrl} alt="" className="history-item__thumb" />
+        <div className="history-item__body">
+          <strong className="truncate">{best.commonName}</strong>
+          <em className="truncate">{best.scientificName}</em>
+          <div className="history-item__meta">
+            <span className={`text-${confidenceLevel(best.confidence)}`}>
+              {best.confidence.toFixed(0)}% match
+            </span>
+            <span>{date}</span>
+          </div>
+        </div>
+      </Link>
       {onDelete && (
-        <Pressable
-          onPress={onDelete}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${best.commonName} from history`}
-          style={styles.delete}
+        <button
+          type="button"
+          className="icon-button icon-button--plain"
+          onClick={onDelete}
+          aria-label={`Delete ${best.commonName} from history`}
         >
-          <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
-        </Pressable>
+          <Trash2 size={20} />
+        </button>
       )}
-    </Pressable>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    gap: spacing.md,
-    ...shadow,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  thumb: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.sm,
-    backgroundColor: colors.border,
-  },
-  body: {
-    flex: 1,
-    gap: 2,
-  },
-  common: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  scientific: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    color: colors.textMuted,
-  },
-  meta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  confidence: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  date: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  delete: {
-    padding: spacing.sm,
-  },
-});

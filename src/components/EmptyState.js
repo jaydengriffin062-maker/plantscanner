@@ -1,37 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
-
-import { colors, spacing } from '../constants/theme';
-
-export default function EmptyState({ icon = 'leaf-outline', title, message, children }) {
+export default function EmptyState({ icon: Icon, title, message, children }) {
   return (
-    <View style={styles.container}>
-      <Ionicons name={icon} size={56} color={colors.primary} />
-      <Text style={styles.title}>{title}</Text>
-      {message ? <Text style={styles.message}>{message}</Text> : null}
-      {children}
-    </View>
+    <div className="empty">
+      {Icon && <Icon size={56} className="empty__icon" aria-hidden />}
+      <h2 className="empty__title">{title}</h2>
+      {message && <p className="empty__message">{message}</p>}
+      {children && <div className="empty__actions">{children}</div>}
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});

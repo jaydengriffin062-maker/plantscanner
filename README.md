@@ -1,158 +1,105 @@
 # Plant Scanner 🌿
 
-A cross-platform (iOS and Android) React Native + Expo app that identifies plants from a photo, using the free [Pl@ntNet API](https://my.plantnet.org/).
+A mobile-first web app that identifies plants from a photo, built with **Next.js** for **Vercel** and powered by the free [Pl@ntNet API](https://my.plantnet.org/).
 
-- **Live camera** with a shutter button, flash toggle (off / auto / on), front/back switch and a framing guide
-- **Gallery upload** through the system photo picker, with optional cropping
-- **Identification**: common name, scientific name, family/genus, a confidence percentage and other possible matches
-- **Results screen**: card layout with care tips (light, watering, soil and extra notes)
-- **Offline history**: past scans and their photos are stored on the device, so you can view them without a connection
+- **Take a picture.** A live in-browser camera has a shutter button, a flash/torch toggle (where the phone supports it), a front/back camera switch and a framing guide. If the live camera is blocked or unavailable, **Open phone camera** opens the phone's own camera app instead.
+- **Upload from gallery.** Pick any existing photo.
+- **Identification.** Shows the common name, scientific name, family and genus, a confidence percentage and other possible matches.
+- **Results.** Card layout with care tips for light, watering, soil and more.
+- **History.** Scans are saved on the device and still open offline.
+- **Installable.** Use *Add to Home Screen* to get an app icon and full-screen app.
 
-Built on **Expo SDK 58** (React Native 0.88, React 19.3).
+Your Pl@ntNet API key stays on the server (in a Vercel environment variable) and is never sent to the browser.
 
 ---
 
-## 1. Prerequisites
+## Deploy to Vercel
 
-| Tool | Notes |
-| --- | --- |
-| [Node.js](https://nodejs.org/) LTS (20+) | `node -v` to check |
-| A phone with **Expo Go** | [iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent). Or use an iOS Simulator or Android emulator. |
-| A free **Pl@ntNet API key** | See step 3 |
+1. Get a free Pl@ntNet API key: sign up at **https://my.plantnet.org/**, then go to **My account → Settings → API key**. The free tier allows 500 identifications a day.
+2. Go to **https://vercel.com/new**, sign in with GitHub, and **Import** the `plantscanner` repository.
+3. Before clicking Deploy, open **Environment Variables** and add:
+   - **Key:** `PLANTNET_API_KEY`
+   - **Value:** your Pl@ntNet key
+4. Click **Deploy**. Vercel detects Next.js automatically, so there's nothing else to configure.
+5. Open the `https://….vercel.app` link on your phone. To install it:
+   - **iPhone (Safari):** Share → **Add to Home Screen**
+   - **Android (Chrome):** ⋮ menu → **Add to Home screen** / **Install app**
 
-## 2. Install
+> The camera only works over **https**, which Vercel provides automatically.
+> If you add or change `PLANTNET_API_KEY` after deploying, redeploy (**Deployments → ⋯ → Redeploy**) so it takes effect.
+> Vercel builds the repository's default branch for Production; other branches get Preview URLs. You can change this under **Settings → Git**.
 
-### Option A: use this repository
+## Run locally
+
+Requires Node.js 20.9 or newer.
 
 ```bash
-git clone https://github.com/jaydengriffin062-maker/plantscanner.git
-cd plantscanner
 npm install
+cp .env.example .env.local     # then paste your key into .env.local
+npm run dev                    # http://localhost:3000
 ```
 
-### Option B: build it from scratch
-
-These are the commands this project was created with:
+Browsers only allow the camera on `https` or `localhost`. To test on your phone, deploy to Vercel or use an https tunnel.
 
 ```bash
-# 1. Create a blank Expo app
-npx create-expo-app@latest plantscanner --template blank
-cd plantscanner
-
-# 2. Add the dependencies. `npx expo install` picks versions that match your Expo SDK.
-npx expo install expo-camera expo-image-picker expo-file-system expo-image-manipulator \
-  @react-native-async-storage/async-storage \
-  @react-navigation/native @react-navigation/native-stack \
-  react-native-screens react-native-safe-area-context @expo/vector-icons
-
-# 3. Copy App.js, app.json, .env.example and the src/ folder from this repo into the project.
+npm run lint    # ESLint
+npm run build   # production build
 ```
 
-Always use `npx expo install <pkg>` instead of `npm install <pkg>` for native libraries, so the versions stay compatible with your Expo SDK.
-
-## 3. Get a Pl@ntNet API key
-
-1. Create a free account at **https://my.plantnet.org/**.
-2. Open **My account → Settings** and copy your **API key**. The free tier includes 500 identifications per day.
-3. In the project root, copy the example env file and paste the key in:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   ```env
-   EXPO_PUBLIC_PLANTNET_API_KEY=2b10xxxxxxxxxxxxxxxxxxxxxx
-   ```
-
-4. If you get `401` errors, check the key's settings on my.plantnet.org (for example, any authorized-domain restriction).
-
-> **Security note:** variables prefixed with `EXPO_PUBLIC_` are compiled into the app bundle, so the key can be extracted from a published app. That is fine for development and personal use. For a public release, put a small backend or serverless proxy in front of Pl@ntNet that holds the key, then point `PLANTNET_BASE_URL` in `src/constants/config.js` at your proxy.
-
-## 4. Run
-
-```bash
-npx expo start
-```
-
-- Scan the QR code with **Expo Go** (Android) or the Camera app (iOS).
-- Press `a` for an Android emulator or `i` for an iOS simulator.
-- Restart with `npx expo start --clear` after you change `.env`.
-
-The emulator and simulator cameras are simulated, so test the camera on a real device. Gallery upload works everywhere.
-
-> If your Expo Go app doesn't support SDK 58 yet, make a development build instead: `npx expo run:android` / `npx expo run:ios`, or `npx eas-cli@latest build --profile development`.
-
-### Lint
-
-```bash
-npm run lint
-```
-
-## 5. Project structure
+## Project structure
 
 ```
-plantscanner/
-├── App.js                      # Navigation container and stack (Home, Camera, Results, History)
-├── index.js                    # Expo entry point
-├── app.json                    # App config and camera/photo permission strings
-├── .env.example                # Template for EXPO_PUBLIC_PLANTNET_API_KEY
-└── src/
-    ├── constants/
-    │   ├── config.js           # API URL, key, limits (timeouts, upload size, history cap)
-    │   └── theme.js            # Colours, spacing, radii, shadows
-    ├── services/
-    │   ├── plantNetApi.js      # Calls Pl@ntNet and normalises results; friendly error messages
-    │   ├── imageService.js     # Resizes photos before upload; saves photos for offline history
-    │   ├── galleryPicker.js    # Opens the system photo picker
-    │   ├── historyStorage.js   # AsyncStorage CRUD for scan history
-    │   └── careTips.js         # Offline care-tip guide by plant family/genus
-    ├── components/
-    │   ├── PrimaryButton.js
-    │   ├── ConfidenceBar.js
-    │   ├── ResultCard.js       # Best-match card
-    │   ├── AlternativeMatches.js
-    │   ├── CareTipsCard.js
-    │   ├── HistoryItem.js
-    │   └── EmptyState.js
-    └── screens/
-        ├── HomeScreen.js       # Take photo / upload buttons and recent scans
-        ├── CameraScreen.js     # Live camera viewport
-        ├── ResultsScreen.js    # Runs the identification and shows the results
-        └── HistoryScreen.js    # Full history with delete / clear all
+src/
+├── app/
+│   ├── layout.js               # Root layout, metadata, theme colour, service worker
+│   ├── manifest.js             # PWA manifest (Add to Home Screen)
+│   ├── globals.css             # All styles (mobile-first)
+│   ├── page.js                 # Home: take photo / upload / recent scans
+│   ├── camera/page.js          # Live camera viewport, shutter, flash, switch, fallback
+│   ├── identify/page.js        # Sends the photo to /api/identify, saves the result
+│   ├── plant/page.js           # Results page (/plant?id=…)
+│   ├── plant/PlantDetails.js
+│   ├── history/page.js         # Full history with delete / clear all
+│   └── api/identify/route.js   # Server route: validates upload, calls Pl@ntNet with the secret key
+├── components/                 # ResultCard, ConfidenceBar, CareTipsCard, AlternativeMatches,
+│                               # HistoryItem, EmptyState, PageHeader, FileButton, ServiceWorkerRegister
+└── lib/
+    ├── plantNet.js             # Server-only Pl@ntNet client and response normalisation
+    ├── imageUtils.js           # Resize camera frames and uploads in the browser
+    ├── scanStorage.js          # localStorage history and sessionStorage hand-off between pages
+    ├── useStartScan.js         # Shared "photo → identify" hook
+    └── careTips.js             # Offline care-tip guide by plant family/genus
+public/
+├── sw.js                       # Service worker for offline app shell and history
+└── icon-*.png                  # App icons
 ```
 
-## 6. How it works
+## How it works
 
 ```
-Camera / Gallery ──► ResultsScreen
-                         │ 1. imageService.prepareImageForUpload()  (resize to ≤1280px JPEG)
-                         │ 2. plantNetApi.identifyPlant()           (multipart POST)
-                         │ 3. imageService.persistImage()           (copy into the document directory)
-                         │ 4. historyStorage.addToHistory()         (AsyncStorage)
-                         ▼
-                   ResultCard + CareTipsCard + AlternativeMatches
+Camera frame / uploaded file
+   │  resized in the browser (≤1280px JPEG upload, 480px thumbnail)
+   ▼
+/identify ── POST /api/identify (multipart "image") ──► Vercel function ──► Pl@ntNet
+   │                                                     (adds PLANTNET_API_KEY)
+   ▼
+saved to localStorage history ──► /plant?id=… (results, care tips, alternatives)
 ```
 
-- **Pl@ntNet request:** `POST https://my-api.plantnet.org/v2/identify/all?api-key=…&lang=en&nb-results=4` with multipart fields `images` (the photo) and `organs=auto`.
-- **Confidence:** Pl@ntNet's `score` (0–1) is shown as a percentage. 70% and above is green, 40–70% amber, below 40% red with a tip to retake the photo.
-- **Care tips:** Pl@ntNet does not return care information, so `careTips.js` has an offline guide for about 20 common plant families (aroids, cacti, succulents, orchids, herbs, ferns, palms, and more), with extra tips for some genera. Anything else gets general houseplant advice. Add entries to `BY_FAMILY` / `BY_GENUS` to extend it.
-- **History:** stored under the AsyncStorage key `@plantscanner/history`, newest first, up to 100 entries. Photos live in `<documentDirectory>/scans/` so the OS can't clear them like cache files.
+- **Pl@ntNet request:** `POST https://my-api.plantnet.org/v2/identify/all` with `images` (the photo) and `organs=auto`, asking for the top 4 matches.
+- **Confidence:** Pl@ntNet's score (0–1) is shown as a percentage. 70% and above is green, 40–70% amber, below 40% red with a tip to retake the photo.
+- **Care tips:** Pl@ntNet doesn't return care information, so `src/lib/careTips.js` has an offline guide for about 20 common plant families, with general advice for anything else. Add entries to `BY_FAMILY` / `BY_GENUS` to extend it.
+- **Flash:** browsers can only control the torch on some Android phones (Chrome). The flash button appears only when the phone supports it. iPhones don't allow it from the web.
+- **Quota protection:** the API route rejects requests from other websites, uploads over 4 MB and anything that isn't a JPEG or PNG.
 
-## 7. Tips for better identifications
-
-- Photograph **one organ**: a single leaf, flower, fruit or bark, filling most of the frame.
-- Use even daylight and avoid blur. Turn on the flash in dim light.
-- A plain background helps. Cropping in the gallery picker also helps.
-
-## 8. Troubleshooting
+## Troubleshooting
 
 | Problem | Fix |
 | --- | --- |
-| "No Pl@ntNet API key found" | Create `.env` (step 3), then run `npx expo start --clear` |
-| `401` / key rejected | Check the key and its settings on my.plantnet.org |
-| `429` | You've used the daily free quota. Try again tomorrow. |
-| "Couldn't recognise a plant" (404) | Retake the photo closer, with a single leaf or flower |
-| Black camera screen | Grant camera permission in system Settings and restart the app |
-| Version mismatch warnings | `npx expo install --fix` |
+| "The server is missing PLANTNET_API_KEY" | Add it in Vercel → Settings → Environment Variables, then redeploy |
+| "API key was rejected" | Check the key on my.plantnet.org |
+| "Daily limit reached" | The free quota is used up. Try again tomorrow. |
+| "Couldn't recognise a plant" | Retake the photo closer, with a single leaf or flower |
+| "Live camera unavailable" | Allow camera access for the site in your browser settings, or tap **Open phone camera** |
 
-Plant identification is powered by [Pl@ntNet](https://plantnet.org/). Species links go to [GBIF](https://www.gbif.org/).
+Plant identification by [Pl@ntNet](https://plantnet.org/). Species links go to [GBIF](https://www.gbif.org/).

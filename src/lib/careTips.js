@@ -136,14 +136,14 @@ const BY_GENUS = {
 };
 
 const LABELS = {
-  light: { title: 'Light', icon: 'sunny-outline' },
-  water: { title: 'Watering', icon: 'water-outline' },
-  soil: { title: 'Soil', icon: 'leaf-outline' },
-  extra: { title: 'Good to know', icon: 'information-circle-outline' },
+  light: 'Light',
+  water: 'Watering',
+  soil: 'Soil',
+  extra: 'Good to know',
 };
 
 /**
- * Returns care tips for a match as an array of { key, title, icon, text },
+ * Returns care tips for a match as an array of { key, title, text },
  * plus `basis`: a short description of what the advice is based on, or null
  * when only generic advice was available.
  */
@@ -160,7 +160,7 @@ export function getCareTips({ family, genus } = {}) {
     basis,
     tips: Object.keys(LABELS).map((key) => ({
       key,
-      ...LABELS[key],
+      title: LABELS[key],
       text: merged[key],
     })),
   };

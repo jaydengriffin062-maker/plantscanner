@@ -1,60 +1,24 @@
-import { StyleSheet, Text, View } from 'react-native';
-
-import { colors, confidenceColor, radius, spacing } from '../constants/theme';
+export function confidenceLevel(percent) {
+  if (percent >= 70) return 'high';
+  if (percent >= 40) return 'medium';
+  return 'low';
+}
 
 export default function ConfidenceBar({ confidence, compact = false }) {
   const percent = Math.max(0, Math.min(100, confidence ?? 0));
-  const color = confidenceColor(percent);
+  const level = confidenceLevel(percent);
 
   return (
-    <View
-      accessible
-      accessibilityLabel={`Match confidence ${percent.toFixed(0)} percent`}
-      style={styles.container}
-    >
+    <div className="confidence" aria-label={`Match confidence ${percent.toFixed(0)} percent`}>
       {!compact && (
-        <View style={styles.labelRow}>
-          <Text style={styles.label}>Match confidence</Text>
-          <Text style={[styles.value, { color }]}>{percent.toFixed(1)}%</Text>
-        </View>
+        <div className="confidence__label">
+          <span>Match confidence</span>
+          <strong className={`text-${level}`}>{percent.toFixed(1)}%</strong>
+        </div>
       )}
-      <View style={[styles.track, compact && styles.trackCompact]}>
-        <View style={[styles.fill, { width: `${percent}%`, backgroundColor: color }]} />
-      </View>
-    </View>
+      <div className={`confidence__track ${compact ? 'confidence__track--compact' : ''}`}>
+        <div className={`confidence__fill bg-${level}`} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: spacing.xs,
-  },
-  label: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  value: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  track: {
-    height: 10,
-    borderRadius: radius.pill,
-    backgroundColor: colors.border,
-    overflow: 'hidden',
-  },
-  trackCompact: {
-    height: 6,
-  },
-  fill: {
-    height: '100%',
-    borderRadius: radius.pill,
-  },
-});
