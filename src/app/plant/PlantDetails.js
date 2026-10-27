@@ -1,21 +1,48 @@
 'use client';
 
-import { Camera, ExternalLink, Leaf } from 'lucide-react';
+import { Camera, CircleAlert, ExternalLink, Leaf } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
+import AboutPlantCard from '@/components/AboutPlantCard';
 import AlternativeMatches from '@/components/AlternativeMatches';
 import CareTipsCard from '@/components/CareTipsCard';
+import { confidenceLevel } from '@/components/ConfidenceBar';
 import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
+import ReferencePhotos from '@/components/ReferencePhotos';
 import ResultCard from '@/components/ResultCard';
-import { findScan, useHistory } from '@/lib/scanStorage';
+import { displayName } from '@/lib/plantNames';
+import { findScan, updateInHistory, useHistory } from '@/lib/scanStorage';
+import { usePlantInfo } from '@/lib/usePlantInfo';
+
+const POSSIBLE_MATCH_COUNT = 3;
+
+const PROVIDER_LABELS = {
+  'botanical-vision': 'the Botanical Vision model',
+  plantnet: 'Pl@ntNet',
+};
 
 export default function PlantDetails() {
   const id = useSearchParams().get('id');
   // Subscribing to history re-renders this page once storage is readable on the client.
   const history = useHistory();
   const record = history === null || !id ? null : findScan(id);
+  const best = record?.matches[0];
+  const level = best ? confidenceLevel(best.confidence) : null;
+  // Only look up details for a species we're reasonably confident about.
+  const info = usePlantInfo(best && level !== 'low' ? best.scientificName : null);
+  const lookedUpName = info.data?.commonName ?? null;
+
+  // The classifier only returns taxonomy, so remember the looked-up common name for history.
+  useEffect(() => {
+    if (record && lookedUpName && !record.matches[0].commonName) {
+      updateInHistory(record.id, (item) => ({
+        matches: item.matches.map((m, i) => (i === 0 ? { ...m, commonName: lookedUpName } : m)),
+      }));
+    }
+  }, [record, lookedUpName]);
 
   if (history === null) return null;
 
@@ -35,36 +62,79 @@ export default function PlantDetails() {
     );
   }
 
-  const [best, ...alternatives] = record.matches;
+  const alternatives = record.matches.slice(1);
+  const bestWithName = { ...best, commonName: best.commonName ?? lookedUpName };
 
   return (
     <main className="results">
       <PageHeader title="Results" backHref="/" />
-      {/* eslint-disable-next-line @next/next/no-img-element -- local data URL thumbnail */}
-      <img src={record.imageDataUrl} alt={best.commonName} className="results__photo" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- local data URL of the user's photo */}
+      <img src={record.imageDataUrl} alt="Your plant photo" className="results__photo" />
 
       <div className="results__cards">
-        <ResultCard match={best} />
-        <CareTipsCard match={best} />
-        <AlternativeMatches matches={alternatives} />
+        {level === 'low' ? (
+          <>
+            <section className="card">
+              <p className="eyebrow eyebrow--low">
+                <CircleAlert size={16} aria-hidden />
+                Not sure
+              </p>
+              <h2 className="result__common">We couldn&apos;t confidently identify this plant</h2>
+              <p className="muted small">
+                The closest matches are listed below, but none is a confident match. For a better result, photograph
+                a single leaf, flower or fruit up close, in good light, against a plain background.
+              </p>
+            </section>
+            <AlternativeMatches
+              matches={record.matches.slice(0, POSSIBLE_MATCH_COUNT)}
+              title="Possible matches"
+              numbered
+            />
+          </>
+        ) : (
+          <>
+            <ResultCard match={bestWithName} level={level} />
+            <AboutPlantCard info={info} />
+            <ReferencePhotos userPhoto={record.imageDataUrl} info={info} speciesName={best.scientificName} />
+            {level === 'medium' ? (
+              <AlternativeMatches
+                matches={record.matches.slice(0, POSSIBLE_MATCH_COUNT)}
+                title="Possible matches"
+                numbered
+              />
+            ) : (
+              <AlternativeMatches matches={alternatives} />
+            )}
+            <CareTipsCard match={best} />
 
-        {best.gbifId && (
-          <a
-            href={`https://www.gbif.org/species/${best.gbifId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="link-row"
-          >
-            <ExternalLink size={18} aria-hidden />
-            Learn more about <em>{best.scientificName}</em> on GBIF
-          </a>
+            <div className="links">
+              {info.data?.links?.inaturalist && (
+                <a href={info.data.links.inaturalist} target="_blank" rel="noreferrer" className="link-row">
+                  <ExternalLink size={18} aria-hidden />
+                  {displayName(bestWithName)} on iNaturalist
+                </a>
+              )}
+              {best.gbifId && (
+                <a
+                  href={`https://www.gbif.org/species/${best.gbifId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="link-row"
+                >
+                  <ExternalLink size={18} aria-hidden />
+                  Learn more about <em>{best.scientificName}</em> on GBIF
+                </a>
+              )}
+            </div>
+          </>
         )}
 
         <p className="muted tiny center">
-          Scanned {new Date(record.createdAt).toLocaleString()} · Identification by Pl@ntNet
+          Scanned {new Date(record.createdAt).toLocaleString()} · Identification by{' '}
+          {PROVIDER_LABELS[record.provider ?? 'plantnet'] ?? record.provider}
         </p>
 
-        <Link href="/camera" className="button button--primary">
+        <Link href="/" className="button button--primary">
           <Camera size={22} aria-hidden />
           Scan another plant
         </Link>

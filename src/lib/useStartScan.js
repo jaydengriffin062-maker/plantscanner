@@ -3,12 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import { createScanImages, loadImage } from './imageUtils';
+import { createScanImages, loadImage, validateImageFile } from './imageUtils';
 import { setPendingScan } from './scanStorage';
 
 /**
  * Turns a camera frame or an uploaded file into a pending scan and opens the
- * /identify page, which sends it to the API.
+ * /identify page, where the user previews it and confirms with "Scan plant".
  */
 export function useStartScan() {
   const router = useRouter();
@@ -30,6 +30,7 @@ export function useStartScan() {
       setIsPreparing(true);
       setError(null);
       try {
+        validateImageFile(file);
         const image = await loadImage(file);
         startFromSource(image, options);
         image.close?.(); // free ImageBitmap memory

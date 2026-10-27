@@ -30,19 +30,21 @@ export default function HomePage() {
       <div className="stack">
         <Link href="/camera" className="button button--primary">
           <Camera size={22} aria-hidden />
-          Take a photo
+          Take photo
         </Link>
         <FileButton
           icon={ImageUp}
-          label={isPreparing ? 'Preparing photo…' : 'Upload from gallery'}
+          label={isPreparing ? 'Preparing photo…' : 'Upload photo'}
           variant="secondary"
           onFile={(file) => startFromFile(file)}
           disabled={isPreparing}
         />
-        {error && (
+        {error ? (
           <p className="error-text" role="alert">
             {error}
           </p>
+        ) : (
+          <p className="muted tiny center">JPG, PNG or WebP · up to 25 MB</p>
         )}
       </div>
 

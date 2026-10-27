@@ -1,20 +1,14 @@
 // Server-only Pl@ntNet client. The API key never leaves the server.
 
+import { IdentificationError } from './identificationError';
+
 const PLANTNET_URL = 'https://my-api.plantnet.org/v2/identify/all';
 const MAX_RESULTS = 4;
 const TIMEOUT_MS = 25000;
 
-export class PlantNetError extends Error {
-  constructor(message, status) {
-    super(message);
-    this.name = 'PlantNetError';
-    this.status = status;
-  }
-}
-
 /**
  * Sends one image to Pl@ntNet and returns normalised matches, best first.
- * PlantMatch: { commonName, otherCommonNames, scientificName, family, genus, confidence (0-100), gbifId }
+ * Matches use the PlantMatch shape described in lib/botanicalModel.js.
  */
 export async function identifyWithPlantNet(image, apiKey) {
   const query = new URLSearchParams({
@@ -39,20 +33,20 @@ export async function identifyWithPlantNet(image, apiKey) {
     });
   } catch (error) {
     if (error?.name === 'TimeoutError') {
-      throw new PlantNetError('Pl@ntNet took too long to respond. Please try again.', 504);
+      throw new IdentificationError('Pl@ntNet took too long to respond. Please try again.', 504);
     }
-    throw new PlantNetError('Could not reach Pl@ntNet. Please try again.', 502);
+    throw new IdentificationError('Could not reach Pl@ntNet. Please try again.', 502);
   }
 
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new PlantNetError(messageForStatus(response.status, body), statusForClient(response.status));
+    throw new IdentificationError(messageForStatus(response.status, body), statusForClient(response.status));
   }
 
   const matches = (body?.results ?? []).map(normalizeResult);
   if (matches.length === 0) {
-    throw new PlantNetError(NOT_FOUND_MESSAGE, 404);
+    throw new IdentificationError(NOT_FOUND_MESSAGE, 404);
   }
 
   return { matches, remainingRequests: body?.remainingIdentificationRequests ?? null };
@@ -67,11 +61,14 @@ function normalizeResult(result) {
     species.scientificNameWithoutAuthor || species.scientificName || 'Unknown species';
 
   return {
-    commonName: species.commonNames?.[0] || scientificName,
+    commonName: species.commonNames?.[0] || null,
     otherCommonNames: species.commonNames?.slice(1, 4) ?? [],
     scientificName,
     family: species.family?.scientificNameWithoutAuthor ?? null,
     genus: species.genus?.scientificNameWithoutAuthor ?? null,
+    // Pl@ntNet doesn't return order or class.
+    order: null,
+    taxonClass: null,
     confidence: Math.round((result.score ?? 0) * 1000) / 10, // one decimal place
     gbifId: result.gbif?.id ?? null,
   };

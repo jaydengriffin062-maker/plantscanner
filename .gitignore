@@ -53,3 +53,12 @@ models/
 *.pth
 *.pt
 *.ckpt
+*.bin
+*.onnx
+# The int8 web model (~30 MB) is committed so Vercel can serve it.
+!/model/plant-classifier.onnx
+
+# Python
+__pycache__/
+*.pyc
+.venv/

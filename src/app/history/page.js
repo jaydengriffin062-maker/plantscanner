@@ -6,6 +6,7 @@ import Link from 'next/link';
 import EmptyState from '@/components/EmptyState';
 import HistoryItem from '@/components/HistoryItem';
 import PageHeader from '@/components/PageHeader';
+import { displayName } from '@/lib/plantNames';
 import { clearHistory, removeFromHistory, useHistory } from '@/lib/scanStorage';
 
 export default function HistoryPage() {
@@ -16,7 +17,7 @@ export default function HistoryPage() {
   };
 
   const confirmDelete = (record) => {
-    if (window.confirm(`Remove ${record.matches[0].commonName} from your history?`)) {
+    if (window.confirm(`Remove ${displayName(record.matches[0])} from your history?`)) {
       removeFromHistory(record.id);
     }
   };

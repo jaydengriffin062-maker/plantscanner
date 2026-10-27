@@ -6,8 +6,9 @@ import { useSyncExternalStore } from 'react';
 // {
 //   id: string,
 //   createdAt: string,          // ISO date
-//   imageDataUrl: string,       // small JPEG thumbnail
-//   matches: PlantMatch[],      // best match first (see lib/plantNet.js)
+//   imageDataUrl: string,       // JPEG of the user's photo (<= 720px)
+//   matches: PlantMatch[],      // best match first (see lib/botanicalModel.js)
+//   provider?: string,          // 'botanical-vision' | 'plantnet' (missing on old scans)
 // }
 //
 // The photo waiting to be identified is passed between pages in sessionStorage.
@@ -83,6 +84,13 @@ export function addToHistory(record) {
   return writeHistory([record, ...getHistory().filter((item) => item.id !== record.id)]);
 }
 
+/** Applies `changes(record)` to one saved scan, e.g. to add a looked-up common name. */
+export function updateInHistory(id, changes) {
+  const history = getHistory();
+  if (!history.some((item) => item.id === id)) return;
+  writeHistory(history.map((item) => (item.id === id ? { ...item, ...changes(item) } : item)));
+}
+
 export function removeFromHistory(id) {
   writeHistory(getHistory().filter((item) => item.id !== id));
 }
@@ -129,6 +137,7 @@ export function clearPendingScan() {
   } catch {
     // Ignore.
   }
+  emit();
 }
 
 function getPendingScan() {

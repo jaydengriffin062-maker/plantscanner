@@ -1,6 +1,11 @@
+// Confidence bands (percent). With thousands of species a model rarely reaches
+// 100%, so 70%+ is treated as an identification and 40-70% as a possible match.
+export const HIGH_CONFIDENCE = 70;
+export const MEDIUM_CONFIDENCE = 40;
+
 export function confidenceLevel(percent) {
-  if (percent >= 70) return 'high';
-  if (percent >= 40) return 'medium';
+  if (percent >= HIGH_CONFIDENCE) return 'high';
+  if (percent >= MEDIUM_CONFIDENCE) return 'medium';
   return 'low';
 }
 
@@ -12,8 +17,8 @@ export default function ConfidenceBar({ confidence, compact = false }) {
     <div className="confidence" aria-label={`Match confidence ${percent.toFixed(0)} percent`}>
       {!compact && (
         <div className="confidence__label">
-          <span>Match confidence</span>
-          <strong className={`text-${level}`}>{percent.toFixed(1)}%</strong>
+          <span>Confidence</span>
+          <strong className={`text-${level}`}>{percent.toFixed(0)}%</strong>
         </div>
       )}
       <div className={`confidence__track ${compact ? 'confidence__track--compact' : ''}`}>

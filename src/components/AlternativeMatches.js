@@ -1,21 +1,25 @@
+import { displayName, hasCommonName } from '@/lib/plantNames';
+
 import ConfidenceBar, { confidenceLevel } from './ConfidenceBar';
 
-/** Lists the runner-up candidates returned by the API. */
-export default function AlternativeMatches({ matches }) {
+/** Lists candidate matches returned by the identification service. */
+export default function AlternativeMatches({ matches, title = 'Other possible matches', numbered = false }) {
   if (!matches?.length) return null;
 
   return (
     <section className="card">
-      <h2 className="card__title">Other possible matches</h2>
-      {matches.map((match) => (
+      <h2 className="card__title">{title}</h2>
+      {matches.map((match, index) => (
         <div key={match.scientificName} className="alt">
           <div className="alt__row">
+            {numbered && <span className="alt__rank">{index + 1}</span>}
             <div className="alt__names">
-              <strong>{match.commonName}</strong>
-              <em>{match.scientificName}</em>
+              <strong className={hasCommonName(match) ? undefined : 'italic'}>{displayName(match)}</strong>
+              {hasCommonName(match) && <em>{match.scientificName}</em>}
+              {match.family && <span className="muted tiny">{match.family}</span>}
             </div>
             <span className={`alt__percent text-${confidenceLevel(match.confidence)}`}>
-              {match.confidence.toFixed(1)}%
+              {match.confidence.toFixed(0)}%
             </span>
           </div>
           <ConfidenceBar confidence={match.confidence} compact />

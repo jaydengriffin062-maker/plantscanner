@@ -2,6 +2,8 @@
 
 import { useRef } from 'react';
 
+import { ACCEPT_ATTRIBUTE } from '@/lib/imageUtils';
+
 /**
  * A button that opens the photo picker. With `capture`, phones open the
  * camera app directly instead of the gallery.
@@ -29,7 +31,7 @@ export default function FileButton({ icon: Icon, label, onFile, capture, variant
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/*"
+        accept={ACCEPT_ATTRIBUTE}
         capture={capture}
         onChange={handleChange}
         hidden

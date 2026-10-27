@@ -342,11 +342,49 @@ button {
 }
 
 .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--primary);
+}
+
+.eyebrow--medium {
+  color: var(--warning);
+}
+
+.eyebrow--low {
+  color: var(--danger);
+}
+
+.italic {
+  font-style: italic;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: var(--space-xs) 0 0;
+}
+
+.names dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.names dd {
+  margin: 0;
+}
+
+.result__common--scientific {
+  font-style: italic;
 }
 
 .result__common {
@@ -440,6 +478,120 @@ button {
 
 .alt__percent {
   font-weight: 700;
+}
+
+.alt__rank {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ---------- About / photos ---------- */
+
+.about__text {
+  line-height: 1.55;
+}
+
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.skeleton-lines span,
+.photo-grid__item--loading {
+  display: block;
+  background: linear-gradient(90deg, var(--border) 0%, var(--primary-light) 50%, var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.skeleton-lines span {
+  height: 14px;
+  border-radius: 999px;
+}
+
+.skeleton-lines span:last-child {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0 0;
+}
+
+@media (min-width: 480px) {
+  .photo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.photo-grid__item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.photo-grid__item img,
+.photo-grid__item--loading {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+}
+
+.photo-grid__item--yours img {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+
+.photo-grid__item figcaption {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-grid__item--yours figcaption {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
 }
 
 .care__subtitle {
@@ -601,45 +753,147 @@ button {
   padding: var(--space-sm) 0;
 }
 
-/* ---------- Identify ---------- */
+/* ---------- Preview & scanning ---------- */
 
-.identify {
-  position: relative;
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: var(--space-lg);
-  overflow: hidden;
+.preview {
+  gap: var(--space-md);
 }
 
-.identify__backdrop {
+.preview__frame {
+  position: relative;
+  margin: 0 var(--space-md);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.preview__image {
+  display: block;
+  width: 100%;
+  max-height: 62dvh;
+  object-fit: contain;
+  background: #0f1a13;
+}
+
+.preview__overlay {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(10px) brightness(1.05);
-  transform: scale(1.1);
+  background: linear-gradient(rgba(46, 125, 79, 0.18), rgba(46, 125, 79, 0.05));
+  animation: pulse-tint 1.6s ease-in-out infinite;
 }
 
-.identify__card {
-  position: relative;
-  width: 100%;
-  max-width: 340px;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
-  box-shadow: var(--shadow);
+.preview__scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #7ee2a3;
+  box-shadow: 0 0 18px 6px rgba(126, 226, 163, 0.65);
+  animation: scanline 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes scanline {
+  from {
+    top: 0%;
+  }
+  to {
+    top: calc(100% - 3px);
+  }
+}
+
+@keyframes pulse-tint {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.preview__body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  text-align: center;
+  gap: var(--space-md);
+  padding: 0 var(--space-md);
 }
 
-.identify__card h1 {
+.preview__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-sm);
+}
+
+.preview__actions .button {
+  white-space: nowrap;
+  padding: 0 var(--space-md);
+}
+
+.scan-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.scan-status h1 {
   font-size: 18px;
-  margin-top: var(--space-sm);
+  margin-bottom: 2px;
+}
+
+.scan-status__dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.scan-status__dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  animation: bounce 1s ease-in-out infinite;
+}
+
+.scan-status__dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.scan-status__dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: #fdecea;
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.alert svg {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview__scanline,
+  .preview__overlay,
+  .scan-status__dots span,
+  .skeleton-lines span,
+  .photo-grid__item--loading {
+    animation-duration: 3s;
+  }
 }
 
 /* ---------- Camera ---------- */

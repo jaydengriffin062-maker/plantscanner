@@ -2,7 +2,30 @@
 // small JPEGs suitable for upload and for storing in history.
 
 export const UPLOAD_MAX_DIMENSION = 1280;
-export const THUMBNAIL_MAX_DIMENSION = 480;
+// Large enough to show the user's photo prominently on the results page.
+export const THUMBNAIL_MAX_DIMENSION = 720;
+
+export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const ACCEPT_ATTRIBUTE = ACCEPTED_IMAGE_TYPES.join(',');
+const ACCEPTED_EXTENSIONS = /\.(jpe?g|png|webp)$/i;
+// Photos are resized before upload, so this only guards against absurd files.
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+/** Throws an Error with a friendly message if the file isn't a usable photo. */
+export function validateImageFile(file) {
+  // Some browsers leave `type` empty, so fall back to the file extension.
+  const typeOk = file.type ? ACCEPTED_IMAGE_TYPES.includes(file.type) : ACCEPTED_EXTENSIONS.test(file.name);
+  if (!typeOk) {
+    throw new Error('That file type isn’t supported. Please choose a JPG, PNG or WebP photo.');
+  }
+  if (file.size === 0) {
+    throw new Error('That file is empty. Please choose another photo.');
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    const mb = Math.round(file.size / (1024 * 1024));
+    throw new Error(`That photo is ${mb} MB. Please choose one smaller than ${MAX_FILE_BYTES / (1024 * 1024)} MB.`);
+  }
+}
 
 /** Loads an uploaded File/Blob into something drawable, respecting EXIF rotation. */
 export async function loadImage(file) {
@@ -22,7 +45,7 @@ export async function loadImage(file) {
     await img.decode();
     return img;
   } catch {
-    throw new Error("This photo format isn't supported. Please choose a JPEG or PNG image.");
+    throw new Error("This photo couldn't be opened. Please choose a JPG, PNG or WebP image.");
   } finally {
     URL.revokeObjectURL(url);
   }

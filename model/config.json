@@ -1,0 +1,26 @@
+{
+  "model_name": "convnext_tiny.fb_in22k_ft_in1k",
+  "img_size": 224,
+  "resize": 256,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "metrics": {
+    "epoch": 2,
+    "val_top1": 0.4766022712439629,
+    "val_top5": 0.7071041639472654
+  },
+  "onnx_check": {
+    "samples": 2000,
+    "top1_agreement": 0.9415,
+    "torch_top1": 0.4815,
+    "onnx_int8_top1": 0.4795
+  }
+}

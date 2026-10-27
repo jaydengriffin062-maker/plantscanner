@@ -1,6 +1,8 @@
 import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
+import { displayName, hasCommonName } from '@/lib/plantNames';
+
 import { confidenceLevel } from './ConfidenceBar';
 
 export default function HistoryItem({ record, onDelete }) {
@@ -17,8 +19,8 @@ export default function HistoryItem({ record, onDelete }) {
         {/* eslint-disable-next-line @next/next/no-img-element -- local data URL thumbnail */}
         <img src={record.imageDataUrl} alt="" className="history-item__thumb" />
         <div className="history-item__body">
-          <strong className="truncate">{best.commonName}</strong>
-          <em className="truncate">{best.scientificName}</em>
+          <strong className="truncate">{displayName(best)}</strong>
+          {hasCommonName(best) && <em className="truncate">{best.scientificName}</em>}
           <div className="history-item__meta">
             <span className={`text-${confidenceLevel(best.confidence)}`}>
               {best.confidence.toFixed(0)}% match
@@ -32,7 +34,7 @@ export default function HistoryItem({ record, onDelete }) {
           type="button"
           className="icon-button icon-button--plain"
           onClick={onDelete}
-          aria-label={`Delete ${best.commonName} from history`}
+          aria-label={`Delete ${displayName(best)} from history`}
         >
           <Trash2 size={20} />
         </button>

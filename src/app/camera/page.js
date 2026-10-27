@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import EmptyState from '@/components/EmptyState';
 import FileButton from '@/components/FileButton';
+import { ACCEPT_ATTRIBUTE } from '@/lib/imageUtils';
 import { useStartScan } from '@/lib/useStartScan';
 
 export default function CameraPage() {
@@ -221,7 +222,7 @@ function FileButtonRound({ onFile, disabled }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/*"
+        accept={ACCEPT_ATTRIBUTE}
         hidden
         onChange={(event) => {
           const file = event.target.files?.[0];
