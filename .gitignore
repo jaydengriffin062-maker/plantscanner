@@ -40,3 +40,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Machine learning / dataset files
+data/
+datasets/
+.huggingface/
+cache/
+models/
+*.parquet
+*.arrow
+*.safetensors
+*.pth
+*.pt
+*.ckpt
