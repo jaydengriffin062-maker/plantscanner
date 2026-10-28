@@ -20,6 +20,10 @@ const TOP_K = 3;
 const LOW_SPECIES_CONFIDENCE = 0.4;
 const GENUS_CONFIDENCE = 0.5;
 
+// Hide ONNX Runtime's harmless "Failed to persist telemetry device ID" warning on
+// Vercel's read-only filesystem, so real problems stand out in the logs.
+ort.env.logLevel = 'error';
+
 export function hasLocalModel() {
   return existsSync(MODEL_FILE);
 }

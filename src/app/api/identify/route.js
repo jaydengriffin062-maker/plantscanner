@@ -86,18 +86,28 @@ export async function POST(request) {
 /**
  * The Botanical Vision dataset is mostly wild species, so garden cultivars and
  * houseplants often come back uncertain. When PLANTNET_API_KEY is set, ask
- * Pl@ntNet about those photos and use its answer if it is at least a possible
- * match and more confident. Any Pl@ntNet failure keeps the model's result.
+ * Pl@ntNet about those photos and use its answer if it is more confident (the
+ * result page still labels it by confidence). Any Pl@ntNet failure keeps the
+ * model's result. Each decision is logged so it shows in the Vercel runtime logs.
  */
 async function plantNetFallback(image, modelResult) {
-  const apiKey = process.env.PLANTNET_API_KEY;
   const modelBest = modelResult.matches[0]?.confidence ?? 0;
-  if (!apiKey || modelBest >= MEDIUM_CONFIDENCE) return null;
+  if (modelBest >= MEDIUM_CONFIDENCE) return null;
+  const apiKey = process.env.PLANTNET_API_KEY;
+  if (!apiKey) {
+    console.info(`Pl@ntNet fallback: model ${modelBest}%, no PLANTNET_API_KEY set -> keeping model`);
+    return null;
+  }
 
   try {
     const result = await identifyWithPlantNet(image, apiKey);
-    const best = result.matches[0]?.confidence ?? 0;
-    return best >= MEDIUM_CONFIDENCE && best > modelBest ? { matches: result.matches } : null;
+    const top = result.matches[0];
+    const best = top?.confidence ?? 0;
+    const useIt = best > modelBest;
+    console.info(
+      `Pl@ntNet fallback: model ${modelBest}%, Pl@ntNet ${best}% (${top?.scientificName}) -> ${useIt ? 'using Pl@ntNet' : 'keeping model'}`
+    );
+    return useIt ? { matches: result.matches } : null;
   } catch (error) {
     console.warn('Pl@ntNet fallback skipped:', error.message);
     return null;
