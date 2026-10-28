@@ -40,7 +40,7 @@ export default function ResultCard({ match, level }) {
             <p className="muted small">Also known as {match.otherCommonNames.join(', ')}</p>
           )}
         </div>
-        <ConfidenceRing confidence={match.confidence} label="match" />
+        <ConfidenceRing confidence={match.confidence} />
       </div>
 
       {facts.length > 0 && (

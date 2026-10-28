@@ -95,12 +95,12 @@ function NotSureCard() {
     <section className="card result-hero enter">
       <span className="status status--low">
         <CircleAlert size={15} aria-hidden />
-        Not sure
+        Low confidence
       </span>
       <h1 className="result-hero__name result-hero__name--sm">We couldn&apos;t confidently identify this plant</h1>
       <p className="note">
-        The closest matches are listed below, but none is a confident match. For a better result, photograph a
-        single leaf, flower or fruit up close, in good light, against a plain background.
+        <strong>Low confidence — this may be a similar species.</strong> The closest matches from the scan are listed
+        below. For a better result, photograph a single leaf, flower or fruit up close, in good light.
       </p>
     </section>
   );

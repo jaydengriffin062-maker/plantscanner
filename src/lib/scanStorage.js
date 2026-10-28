@@ -14,7 +14,7 @@ import { useSyncExternalStore } from 'react';
 // }
 //
 // The photo waiting to be identified is passed between pages in sessionStorage:
-// { uploadDataUrl, thumbnailDataUrl, origin: 'camera' | 'upload' }.
+// { uploadDataUrl, thumbnailDataUrl, origin: 'camera' | 'upload', fileName, fileSize }.
 
 const HISTORY_KEY = 'plantscanner:history';
 const PENDING_KEY = 'plantscanner:pending';

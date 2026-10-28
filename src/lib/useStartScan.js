@@ -7,9 +7,11 @@ import { createScanImages, loadImage, validateImageFile } from './imageUtils';
 import { setPendingScan } from './scanStorage';
 
 /**
- * Turns a camera frame or an uploaded file into a pending scan and opens the
- * /identify page, where the user previews it and confirms with "Scan plant".
- * `origin` ('camera' | 'upload') lets that page offer Retake vs Replace.
+ * Turns a camera frame or an uploaded file into a pending scan, which the
+ * scanner card on the home page previews until the user taps "Identify plant".
+ * Options: `navigate` (go home afterwards; false when already there), `replace`
+ * (replace the history entry instead of pushing), and `origin` ('camera' |
+ * 'upload') so the preview can offer Retake vs Change image.
  */
 export function useStartScan() {
   const router = useRouter();
@@ -17,10 +19,16 @@ export function useStartScan() {
   const [error, setError] = useState(null);
 
   const startFromSource = useCallback(
-    (source, { replace = false, origin = 'upload' } = {}) => {
-      setPendingScan({ ...createScanImages(source), origin });
-      if (replace) router.replace('/identify');
-      else router.push('/identify');
+    (source, { navigate = true, replace = false, origin = 'upload', file = null } = {}) => {
+      setPendingScan({
+        ...createScanImages(source),
+        origin,
+        fileName: file?.name ?? null,
+        fileSize: file?.size ?? null,
+      });
+      if (!navigate) return;
+      if (replace) router.replace('/');
+      else router.push('/');
     },
     [router]
   );
@@ -33,7 +41,7 @@ export function useStartScan() {
       try {
         validateImageFile(file);
         const image = await loadImage(file);
-        startFromSource(image, options);
+        startFromSource(image, { ...options, file });
         image.close?.(); // free ImageBitmap memory
       } catch (err) {
         setError(err.message || 'Could not read that photo.');
