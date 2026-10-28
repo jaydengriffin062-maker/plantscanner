@@ -2,6 +2,9 @@
 // 100%, so 70%+ is treated as an identification and 40-70% as a possible match.
 export const HIGH_CONFIDENCE = 70;
 export const MEDIUM_CONFIDENCE = 40;
+// Below MEDIUM_CONFIDENCE, a genus is reported when its species' combined
+// confidence reaches this (94-100% correct on the validation split for our model).
+export const GENUS_CONFIDENCE = 50;
 
 export function confidenceLevel(percent) {
   if (percent >= HIGH_CONFIDENCE) return 'high';

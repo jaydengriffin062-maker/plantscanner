@@ -1,4 +1,4 @@
-import { MEDIUM_CONFIDENCE } from '@/components/ConfidenceBar';
+import { GENUS_CONFIDENCE, MEDIUM_CONFIDENCE } from '@/components/ConfidenceBar';
 import { identifyWithBotanicalModel } from '@/lib/botanicalModel';
 import { IdentificationError } from '@/lib/identificationError';
 import { hasLocalModel, identifyWithLocalModel } from '@/lib/localModel';
@@ -69,11 +69,13 @@ export async function POST(request) {
   try {
     const provider = selectProvider();
     const result = await provider.identify(image);
+    let response = { ...result, provider: provider.id };
     if (provider.id === 'botanical-vision') {
       const fallback = await plantNetFallback(image, result);
-      if (fallback) return Response.json({ ...fallback, provider: 'plantnet' });
+      if (fallback) response = { ...fallback, provider: 'plantnet' };
     }
-    return Response.json({ ...result, provider: provider.id });
+    response.genus ??= genusFromMatches(response.matches);
+    return Response.json(response);
   } catch (error) {
     if (error instanceof IdentificationError) {
       return errorResponse(error.message, error.status);
@@ -112,6 +114,31 @@ async function plantNetFallback(image, modelResult) {
     console.warn('Pl@ntNet fallback skipped:', error.message);
     return null;
   }
+}
+
+/**
+ * For results without a model-computed genus (Pl@ntNet, remote service): when no
+ * species is a possible match but the returned matches share a genus whose
+ * combined confidence reaches GENUS_CONFIDENCE, report that genus. E.g. a garden
+ * rose that Pl@ntNet splits across several Rosa species.
+ */
+function genusFromMatches(matches) {
+  if (!matches?.length || matches[0].confidence >= MEDIUM_CONFIDENCE) return null;
+  const totals = new Map();
+  for (const match of matches) {
+    if (match.genus) totals.set(match.genus, (totals.get(match.genus) ?? 0) + match.confidence);
+  }
+  const [name, total] = [...totals].sort((a, b) => b[1] - a[1])[0] ?? [];
+  if (!name || total < GENUS_CONFIDENCE) return null;
+
+  const example = matches.find((match) => match.genus === name);
+  return {
+    name,
+    family: example.family,
+    order: example.order,
+    taxonClass: example.taxonClass,
+    confidence: Math.round(total * 10) / 10,
+  };
 }
 
 function errorResponse(message, status) {

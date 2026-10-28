@@ -8,17 +8,14 @@ import path from 'node:path';
 import * as ort from 'onnxruntime-node';
 import sharp from 'sharp';
 
+import { GENUS_CONFIDENCE, MEDIUM_CONFIDENCE } from '@/components/ConfidenceBar';
+
 import { normalizePrediction } from './botanicalModel';
 import { IdentificationError } from './identificationError';
 
 const MODEL_DIR = path.join(process.cwd(), 'model');
 const MODEL_FILE = path.join(MODEL_DIR, 'plant-classifier.onnx');
 const TOP_K = 3;
-// When no species reaches LOW_SPECIES_CONFIDENCE, report the genus if the summed
-// probability of its species reaches GENUS_CONFIDENCE. On the validation split,
-// genus answers above 50% were correct 94-100% of the time.
-const LOW_SPECIES_CONFIDENCE = 0.4;
-const GENUS_CONFIDENCE = 0.5;
 
 // Hide ONNX Runtime's harmless "Failed to persist telemetry device ID" warning on
 // Vercel's read-only filesystem, so real problems stand out in the logs.
@@ -107,7 +104,8 @@ function bestGenus(probs, labels) {
 
 /**
  * Returns { matches, genus? } with matches in the PlantMatch shape (see lib/botanicalModel.js).
- * `genus` is only set when the species is uncertain but the genus is likely.
+ * `genus` is only set when no species reaches MEDIUM_CONFIDENCE but one genus
+ * reaches GENUS_CONFIDENCE.
  */
 export async function identifyWithLocalModel(image) {
   const { config, labels, session } = await loadModel();
@@ -120,10 +118,11 @@ export async function identifyWithLocalModel(image) {
     .slice(0, TOP_K)
     .map((index) => normalizePrediction({ ...labels[index], confidence: probs[index] }));
 
+  // Sums over all 4,094 species, so it can find a likely genus the top 3 alone would miss.
   const result = { matches };
-  if (probs[ranked[0]] < LOW_SPECIES_CONFIDENCE) {
+  if (probs[ranked[0]] * 100 < MEDIUM_CONFIDENCE) {
     const genus = bestGenus(probs, labels);
-    if (genus.confidence >= GENUS_CONFIDENCE * 100) result.genus = genus;
+    if (genus.confidence >= GENUS_CONFIDENCE) result.genus = genus;
   }
   return result;
 }
