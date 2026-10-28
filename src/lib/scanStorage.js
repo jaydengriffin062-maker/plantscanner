@@ -8,6 +8,8 @@ import { useSyncExternalStore } from 'react';
 //   createdAt: string,          // ISO date
 //   imageDataUrl: string,       // JPEG of the user's photo (<= 720px)
 //   matches: PlantMatch[],      // best match first (see lib/botanicalModel.js)
+//   genus?: { name, family, order, taxonClass, confidence } | null,
+//                               // likely genus when no species is confident
 //   provider?: string,          // 'botanical-vision' | 'plantnet' (missing on old scans)
 // }
 //

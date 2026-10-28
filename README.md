@@ -20,7 +20,7 @@ By default the trained classifier (`model/plant-classifier.onnx`, int8, ~31 MB) 
 | Variable | Effect |
 | --- | --- |
 | `INFERENCE_API_URL` (+ optional `INFERENCE_API_TOKEN`) | Use a separately hosted `ml/serve.py` instead of the bundled model |
-| `PLANTNET_API_KEY` | Use Pl@ntNet when there is no bundled model |
+| `PLANTNET_API_KEY` | Backup for uncertain photos (below 40%): Pl@ntNet's answer is used when it is more confident, e.g. garden roses and houseplants the dataset doesn't cover. Also the main provider when there is no bundled model |
 | `IDENTIFY_PROVIDER` | Optional override: `local`, `remote` or `plantnet` |
 
 To update the model, retrain and run `python -m ml.export_onnx` (see [ml/README.md](ml/README.md)).

@@ -52,6 +52,7 @@ export default function IdentifyPage() {
         createdAt: new Date().toISOString(),
         imageDataUrl: pending.thumbnailDataUrl,
         matches: body.matches,
+        genus: body.genus ?? null,
         provider: body.provider,
       };
       saveLastResult(record);

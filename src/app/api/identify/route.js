@@ -1,3 +1,4 @@
+import { MEDIUM_CONFIDENCE } from '@/components/ConfidenceBar';
 import { identifyWithBotanicalModel } from '@/lib/botanicalModel';
 import { IdentificationError } from '@/lib/identificationError';
 import { hasLocalModel, identifyWithLocalModel } from '@/lib/localModel';
@@ -68,6 +69,10 @@ export async function POST(request) {
   try {
     const provider = selectProvider();
     const result = await provider.identify(image);
+    if (provider.id === 'botanical-vision') {
+      const fallback = await plantNetFallback(image, result);
+      if (fallback) return Response.json({ ...fallback, provider: 'plantnet' });
+    }
     return Response.json({ ...result, provider: provider.id });
   } catch (error) {
     if (error instanceof IdentificationError) {
@@ -75,6 +80,27 @@ export async function POST(request) {
     }
     console.error('Unexpected identification error', error);
     return errorResponse('Something went wrong while identifying the plant.', 500);
+  }
+}
+
+/**
+ * The Botanical Vision dataset is mostly wild species, so garden cultivars and
+ * houseplants often come back uncertain. When PLANTNET_API_KEY is set, ask
+ * Pl@ntNet about those photos and use its answer if it is at least a possible
+ * match and more confident. Any Pl@ntNet failure keeps the model's result.
+ */
+async function plantNetFallback(image, modelResult) {
+  const apiKey = process.env.PLANTNET_API_KEY;
+  const modelBest = modelResult.matches[0]?.confidence ?? 0;
+  if (!apiKey || modelBest >= MEDIUM_CONFIDENCE) return null;
+
+  try {
+    const result = await identifyWithPlantNet(image, apiKey);
+    const best = result.matches[0]?.confidence ?? 0;
+    return best >= MEDIUM_CONFIDENCE && best > modelBest ? { matches: result.matches } : null;
+  } catch (error) {
+    console.warn('Pl@ntNet fallback skipped:', error.message);
+    return null;
   }
 }
 

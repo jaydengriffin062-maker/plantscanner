@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, CircleAlert, ExternalLink, Leaf } from 'lucide-react';
+import { Camera, CircleAlert, CircleHelp, ExternalLink, Leaf } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import AboutPlantCard from '@/components/AboutPlantCard';
 import AlternativeMatches from '@/components/AlternativeMatches';
 import CareTipsCard from '@/components/CareTipsCard';
-import { confidenceLevel } from '@/components/ConfidenceBar';
+import ConfidenceBar, { confidenceLevel } from '@/components/ConfidenceBar';
 import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/PageHeader';
 import ReferencePhotos from '@/components/ReferencePhotos';
@@ -23,6 +23,40 @@ const PROVIDER_LABELS = {
   'botanical-vision': 'the Botanical Vision model',
   plantnet: 'Pl@ntNet',
 };
+
+/** Shown when no species is confident but most of the probability falls in one genus. */
+function GenusCard({ genus }) {
+  const taxonomy = [
+    ['Family', genus.family],
+    ['Order', genus.order],
+    ['Class', genus.taxonClass],
+  ].filter(([, value]) => value);
+
+  return (
+    <section className="card">
+      <p className="eyebrow eyebrow--medium">
+        <CircleHelp size={16} aria-hidden />
+        Likely genus
+      </p>
+      <h2 className="result__common">
+        Probably a member of the genus <em>{genus.name}</em>
+      </h2>
+      <p className="muted small">
+        We can&apos;t tell the exact species, possibly because it&apos;s a garden variety we haven&apos;t learned.
+        The closest species are listed below.
+      </p>
+      <div className="tags">
+        {taxonomy.map(([label, value]) => (
+          <div key={label} className="tag">
+            <span>{label}</span>
+            {value}
+          </div>
+        ))}
+      </div>
+      <ConfidenceBar confidence={genus.confidence} />
+    </section>
+  );
+}
 
 export default function PlantDetails() {
   const id = useSearchParams().get('id');
@@ -74,17 +108,21 @@ export default function PlantDetails() {
       <div className="results__cards">
         {level === 'low' ? (
           <>
-            <section className="card">
-              <p className="eyebrow eyebrow--low">
-                <CircleAlert size={16} aria-hidden />
-                Not sure
-              </p>
-              <h2 className="result__common">We couldn&apos;t confidently identify this plant</h2>
-              <p className="muted small">
-                The closest matches are listed below, but none is a confident match. For a better result, photograph
-                a single leaf, flower or fruit up close, in good light, against a plain background.
-              </p>
-            </section>
+            {record.genus ? (
+              <GenusCard genus={record.genus} />
+            ) : (
+              <section className="card">
+                <p className="eyebrow eyebrow--low">
+                  <CircleAlert size={16} aria-hidden />
+                  Not sure
+                </p>
+                <h2 className="result__common">We couldn&apos;t confidently identify this plant</h2>
+                <p className="muted small">
+                  The closest matches are listed below, but none is a confident match. For a better result,
+                  photograph a single leaf, flower or fruit up close, in good light, against a plain background.
+                </p>
+              </section>
+            )}
             <AlternativeMatches
               matches={record.matches.slice(0, POSSIBLE_MATCH_COUNT)}
               title="Possible matches"

@@ -14,6 +14,11 @@ import { IdentificationError } from './identificationError';
 const MODEL_DIR = path.join(process.cwd(), 'model');
 const MODEL_FILE = path.join(MODEL_DIR, 'plant-classifier.onnx');
 const TOP_K = 3;
+// When no species reaches LOW_SPECIES_CONFIDENCE, report the genus if the summed
+// probability of its species reaches GENUS_CONFIDENCE. On the validation split,
+// genus answers above 50% were correct 94-100% of the time.
+const LOW_SPECIES_CONFIDENCE = 0.4;
+const GENUS_CONFIDENCE = 0.5;
 
 export function hasLocalModel() {
   return existsSync(MODEL_FILE);
@@ -71,24 +76,50 @@ async function toTensor(buffer, { resize, img_size: size, mean, std }) {
   return new ort.Tensor('float32', tensor, [1, 3, size, size]);
 }
 
-function topK(logits, k) {
+function softmax(logits) {
   const max = Math.max(...logits);
   const exps = logits.map((v) => Math.exp(v - max));
   const sum = exps.reduce((a, b) => a + b, 0);
-  return Array.from(exps.keys())
-    .sort((a, b) => exps[b] - exps[a])
-    .slice(0, k)
-    .map((index) => ({ index, probability: exps[index] / sum }));
+  return exps.map((v) => v / sum);
 }
 
-/** Returns { matches } in the PlantMatch shape (see lib/botanicalModel.js). */
+/** The genus whose species together have the highest probability. */
+function bestGenus(probs, labels) {
+  const totals = new Map();
+  probs.forEach((p, i) => totals.set(labels[i].genus, (totals.get(labels[i].genus) ?? 0) + p));
+  let best = null;
+  for (const [name, probability] of totals) {
+    if (!best || probability > best.probability) best = { name, probability };
+  }
+  const example = labels.find((label) => label.genus === best.name);
+  return {
+    name: best.name,
+    family: example.family ?? null,
+    order: example.order ?? null,
+    taxonClass: example.class ?? null,
+    confidence: Math.round(best.probability * 1000) / 10,
+  };
+}
+
+/**
+ * Returns { matches, genus? } with matches in the PlantMatch shape (see lib/botanicalModel.js).
+ * `genus` is only set when the species is uncertain but the genus is likely.
+ */
 export async function identifyWithLocalModel(image) {
   const { config, labels, session } = await loadModel();
   const input = await toTensor(Buffer.from(await image.arrayBuffer()), config);
   const { logits } = await session.run({ input });
 
-  const matches = topK(Array.from(logits.data), TOP_K).map(({ index, probability }) =>
-    normalizePrediction({ ...labels[index], confidence: probability })
-  );
-  return { matches };
+  const probs = softmax(Array.from(logits.data));
+  const ranked = Array.from(probs.keys()).sort((a, b) => probs[b] - probs[a]);
+  const matches = ranked
+    .slice(0, TOP_K)
+    .map((index) => normalizePrediction({ ...labels[index], confidence: probs[index] }));
+
+  const result = { matches };
+  if (probs[ranked[0]] < LOW_SPECIES_CONFIDENCE) {
+    const genus = bestGenus(probs, labels);
+    if (genus.confidence >= GENUS_CONFIDENCE * 100) result.genus = genus;
+  }
+  return result;
 }
