@@ -25,25 +25,41 @@ const PROVIDER_LABELS = {
 };
 
 /** Shown when no species is confident but most of the probability falls in one genus. */
-function GenusCard({ genus }) {
+function GenusCard({ genus, matches }) {
   const taxonomy = [
     ['Family', genus.family],
     ['Order', genus.order],
     ['Class', genus.taxonClass],
   ].filter(([, value]) => value);
+  // A "×" in a candidate's name (e.g. Rosa × damascena) means hybrids are among the
+  // closest matches, so a hybrid or garden variety is the likely explanation.
+  const looksHybrid = matches.some((match) => match.scientificName.includes('×'));
+  const sameGenus = matches.filter((match) => match.genus === genus.name).length;
 
   return (
     <section className="card">
       <p className="eyebrow eyebrow--medium">
         <CircleHelp size={16} aria-hidden />
-        Likely genus
+        {looksHybrid ? 'Likely hybrid or garden variety' : 'Likely genus'}
       </p>
       <h2 className="result__common">
-        Probably a member of the genus <em>{genus.name}</em>
+        {looksHybrid ? 'Probably a hybrid or garden variety of ' : 'Probably a member of the genus '}
+        <em>{genus.name}</em>
       </h2>
       <p className="muted small">
-        We can&apos;t tell the exact species, possibly because it&apos;s a garden variety we haven&apos;t learned.
-        The closest species are listed below.
+        {looksHybrid ? (
+          <>
+            It matches {sameGenus > 1 ? `${sameGenus} ` : ''}
+            <em>{genus.name}</em> species at once, including a known hybrid. Plants like this are usually bred from
+            more than one species, as most garden varieties are, so they don&apos;t match any single wild species.
+            The closest species are listed below.
+          </>
+        ) : (
+          <>
+            We can&apos;t tell which species it is. Close relatives in this genus can look very alike, and it may
+            also be a hybrid or garden variety. The closest species are listed below.
+          </>
+        )}
       </p>
       <div className="tags">
         {taxonomy.map(([label, value]) => (
@@ -109,7 +125,7 @@ export default function PlantDetails() {
         {level === 'low' ? (
           <>
             {record.genus ? (
-              <GenusCard genus={record.genus} />
+              <GenusCard genus={record.genus} matches={record.matches} />
             ) : (
               <section className="card">
                 <p className="eyebrow eyebrow--low">
