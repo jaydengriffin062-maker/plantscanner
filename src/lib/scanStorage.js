@@ -13,7 +13,8 @@ import { useSyncExternalStore } from 'react';
 //   provider?: string,          // 'botanical-vision' | 'plantnet' (missing on old scans)
 // }
 //
-// The photo waiting to be identified is passed between pages in sessionStorage.
+// The photo waiting to be identified is passed between pages in sessionStorage:
+// { uploadDataUrl, thumbnailDataUrl, origin: 'camera' | 'upload' }.
 
 const HISTORY_KEY = 'plantscanner:history';
 const PENDING_KEY = 'plantscanner:pending';

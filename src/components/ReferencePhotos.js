@@ -1,13 +1,20 @@
+import { Images } from 'lucide-react';
+
 /** "More photos": the user's photo next to licensed reference photos of the species. */
-export default function ReferencePhotos({ userPhoto, info, speciesName }) {
+export default function ReferencePhotos({ userPhoto, info, speciesName, style }) {
   const { status, data } = info;
   const photos = data?.photos ?? [];
 
   if (status === 'error' || (status === 'ready' && photos.length === 0)) return null;
 
   return (
-    <section className="card">
-      <h2 className="card__title">More photos</h2>
+    <section className="card enter" style={style}>
+      <h2 className="card__title">
+        <span className="card__title-icon">
+          <Images size={18} aria-hidden />
+        </span>
+        More photos
+      </h2>
       <p className="muted small">Compare your photo with known examples of {speciesName}.</p>
 
       <div className="photo-grid">

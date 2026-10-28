@@ -1,70 +1,81 @@
 'use client';
 
-import { Camera, Clock, ImageUp, Leaf } from 'lucide-react';
+import { BookOpen, Camera, Clock, ScanSearch, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
-import FileButton from '@/components/FileButton';
+import AppHeader from '@/components/AppHeader';
 import HistoryItem from '@/components/HistoryItem';
+import ScanDropzone from '@/components/ScanDropzone';
 import { useHistory } from '@/lib/scanStorage';
-import { useStartScan } from '@/lib/useStartScan';
 
 const RECENT_COUNT = 3;
+
+const STEPS = [
+  { icon: Camera, title: 'Snap or upload', text: 'A clear, close photo of a leaf, flower or fruit works best.' },
+  { icon: ScanSearch, title: 'Identify', text: 'Our model compares it with 4,094 species and shows how sure it is.' },
+  { icon: BookOpen, title: 'Learn', text: 'See its name, family, a description and reference photos.' },
+];
 
 export default function HomePage() {
   const history = useHistory();
   const recent = history?.slice(0, RECENT_COUNT) ?? [];
-  const { startFromFile, isPreparing, error } = useStartScan();
 
   return (
-    <main className="page">
-      <section className="hero">
-        <div className="hero__icon">
-          <Leaf size={40} aria-hidden />
-        </div>
-        <h1 className="hero__title">Plant Scanner</h1>
-        <p className="hero__subtitle">
-          Snap or upload a photo of any plant to find out what it is and how to care for it.
-        </p>
-      </section>
+    <>
+      <AppHeader />
+      <main className="container home">
+        <section className="home__hero">
+          <div className="home__intro enter">
+            <span className="pill">
+              <Sparkles size={14} aria-hidden />
+              Plant identification from a single photo
+            </span>
+            <h1 className="display">
+              What plant is <span className="display__accent">that?</span>
+            </h1>
+            <p className="lead">
+              Take or upload a photo and we&apos;ll name the plant, show how confident we are, and tell you more
+              about it.
+            </p>
+          </div>
 
-      <div className="stack">
-        <Link href="/camera" className="button button--primary">
-          <Camera size={22} aria-hidden />
-          Take photo
-        </Link>
-        <FileButton
-          icon={ImageUp}
-          label={isPreparing ? 'Preparing photo…' : 'Upload photo'}
-          variant="secondary"
-          onFile={(file) => startFromFile(file)}
-          disabled={isPreparing}
-        />
-        {error ? (
-          <p className="error-text" role="alert">
-            {error}
-          </p>
-        ) : (
-          <p className="muted tiny center">JPG, PNG or WebP · up to 25 MB</p>
-        )}
-      </div>
+          <ScanDropzone className="home__scan enter" />
 
-      <div className="section-header">
-        <h2>Recent scans</h2>
-        {recent.length > 0 && <Link href="/history">See all</Link>}
-      </div>
+          <ol className="steps">
+            {STEPS.map(({ icon: Icon, title, text }, index) => (
+              <li key={title} className="step enter" style={{ '--i': index + 1 }}>
+                <span className="step__icon">
+                  <Icon size={20} aria-hidden />
+                </span>
+                <div>
+                  <h3 className="step__title">{title}</h3>
+                  <p className="step__text">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      {history !== null && recent.length === 0 ? (
-        <div className="empty-recent">
-          <Clock size={22} aria-hidden />
-          <span>Your identified plants will appear here.</span>
-        </div>
-      ) : (
-        <div className="stack">
-          {recent.map((record) => (
-            <HistoryItem key={record.id} record={record} />
-          ))}
-        </div>
-      )}
-    </main>
+        <section className="home__recent" aria-labelledby="recent-title">
+          <div className="section-header">
+            <h2 id="recent-title">Recent scans</h2>
+            {recent.length > 0 && <Link href="/history">See all</Link>}
+          </div>
+
+          {history !== null && recent.length === 0 ? (
+            <div className="empty-recent">
+              <Clock size={20} aria-hidden />
+              <span>Plants you identify will appear here, and stay available offline.</span>
+            </div>
+          ) : (
+            <div className="history-grid">
+              {recent.map((record) => (
+                <HistoryItem key={record.id} record={record} />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { setPendingScan } from './scanStorage';
 /**
  * Turns a camera frame or an uploaded file into a pending scan and opens the
  * /identify page, where the user previews it and confirms with "Scan plant".
+ * `origin` ('camera' | 'upload') lets that page offer Retake vs Replace.
  */
 export function useStartScan() {
   const router = useRouter();
@@ -16,8 +17,8 @@ export function useStartScan() {
   const [error, setError] = useState(null);
 
   const startFromSource = useCallback(
-    (source, { replace = false } = {}) => {
-      setPendingScan(createScanImages(source));
+    (source, { replace = false, origin = 'upload' } = {}) => {
+      setPendingScan({ ...createScanImages(source), origin });
       if (replace) router.replace('/identify');
       else router.push('/identify');
     },

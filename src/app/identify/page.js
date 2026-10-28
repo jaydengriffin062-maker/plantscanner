@@ -1,11 +1,23 @@
 'use client';
 
-import { CircleAlert, ImageUp, ScanLine, Trash2 } from 'lucide-react';
+import {
+  Camera,
+  CircleCheck,
+  ImageOff,
+  ImageUp,
+  RotateCcw,
+  ScanLine,
+  SearchX,
+  ServerCrash,
+  Trash2,
+  WifiOff,
+} from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import AppHeader from '@/components/AppHeader';
 import FileButton from '@/components/FileButton';
-import PageHeader from '@/components/PageHeader';
 import { dataUrlToBlob } from '@/lib/imageUtils';
 import {
   addToHistory,
@@ -16,13 +28,33 @@ import {
 } from '@/lib/scanStorage';
 import { useStartScan } from '@/lib/useStartScan';
 
+const TIPS = ['The plant is sharp and in focus', 'It fills most of the photo', 'The light is even, without harsh shadows'];
+
+/** Turns a failed request into a friendly title + icon for the error card. */
+function describeFailure({ status, message }) {
+  if (status === 0) {
+    return { icon: WifiOff, title: "You're offline", message: 'Check your internet connection, then try again.' };
+  }
+  if (status === 400 || status === 413 || status === 415) {
+    return { icon: ImageOff, title: "This photo can't be used", message };
+  }
+  if (status === 404) {
+    return { icon: SearchX, title: 'No plant detected', message };
+  }
+  return {
+    icon: ServerCrash,
+    title: 'Identification is unavailable',
+    message: message || 'Something went wrong on our side. Please try again in a moment.',
+  };
+}
+
 /** Preview the chosen photo, then send it for identification when the user taps "Scan plant". */
 export default function IdentifyPage() {
   const router = useRouter();
   const pending = usePendingScan();
   const { startFromFile, isPreparing, error: fileError } = useStartScan();
   const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState(null);
+  const [failure, setFailure] = useState(null); // { status, message }
   // A ref (not state) so a double tap can't start two requests before re-render.
   const scanningRef = useRef(false);
   // Set once the result page is opening, so clearing the pending scan doesn't redirect home.
@@ -36,15 +68,20 @@ export default function IdentifyPage() {
     if (!pending || scanningRef.current) return;
     scanningRef.current = true;
     setIsScanning(true);
-    setError(null);
+    setFailure(null);
     try {
       const form = new FormData();
       form.append('image', await dataUrlToBlob(pending.uploadDataUrl), 'plant.jpg');
 
-      const response = await fetch('/api/identify', { method: 'POST', body: form });
+      let response;
+      try {
+        response = await fetch('/api/identify', { method: 'POST', body: form });
+      } catch {
+        throw { status: 0 };
+      }
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(body?.error || `Identification failed (${response.status}).`);
+        throw { status: response.status, message: body?.error };
       }
 
       const record = {
@@ -61,18 +98,14 @@ export default function IdentifyPage() {
       router.replace(`/plant?id=${encodeURIComponent(record.id)}`);
       clearPendingScan();
     } catch (err) {
-      setError(
-        err instanceof TypeError
-          ? 'Could not reach the server. Check your internet connection and try again.'
-          : err.message
-      );
+      setFailure({ status: err?.status ?? 500, message: err?.message });
       scanningRef.current = false;
       setIsScanning(false);
     }
   };
 
   const replacePhoto = (file) => {
-    setError(null);
+    setFailure(null);
     startFromFile(file, { replace: true });
   };
 
@@ -83,66 +116,98 @@ export default function IdentifyPage() {
   if (!pending) return null;
 
   const busy = isScanning || isPreparing;
+  const fromCamera = pending.origin === 'camera';
+  const problem = failure && describeFailure(failure);
+  const ProblemIcon = problem?.icon;
 
   return (
-    <main className="page page--flush preview">
-      <PageHeader title={isScanning ? 'Identifying…' : 'Your photo'} backHref="/" />
-
-      <div className={`preview__frame ${isScanning ? 'preview__frame--scanning' : ''}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
-        <img src={pending.uploadDataUrl} alt="The plant photo you selected" className="preview__image" />
-        {isScanning && (
-          <div className="preview__overlay" aria-hidden>
-            <span className="preview__scanline" />
-          </div>
-        )}
-      </div>
-
-      <div className="preview__body">
-        {isScanning ? (
-          <div className="scan-status" role="status" aria-live="polite">
-            <span className="scan-status__dots" aria-hidden>
-              <span />
-              <span />
-              <span />
-            </span>
-            <div>
-              <h1>Analyzing your plant…</h1>
-              <p className="muted small">Looking at leaves, flowers and shape to find the closest species.</p>
+    <>
+      <AppHeader backHref="/" />
+      <main className="container review">
+        <div className={`photo-frame enter ${isScanning ? 'photo-frame--scanning' : ''}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
+          <img src={pending.uploadDataUrl} alt="The plant photo you selected" className="photo-frame__image" />
+          <span className="photo-frame__badge">{fromCamera ? 'Captured photo' : 'Your photo'}</span>
+          {isScanning && (
+            <div className="photo-frame__scan" aria-hidden>
+              <span className="photo-frame__grid" />
+              <span className="photo-frame__line" />
             </div>
-          </div>
-        ) : (
-          <p className="muted center small">
-            Make sure the plant is in focus and fills most of the photo. A single leaf or flower works best.
-          </p>
-        )}
-
-        {(error || fileError) && (
-          <div className="alert" role="alert">
-            <CircleAlert size={20} aria-hidden />
-            <span>{error || fileError}</span>
-          </div>
-        )}
-
-        <button type="button" className="button button--primary" onClick={scan} disabled={busy}>
-          <ScanLine size={22} aria-hidden />
-          {isScanning ? 'Scanning…' : error ? 'Try again' : 'Scan plant'}
-        </button>
-
-        <div className="preview__actions">
-          <FileButton
-            icon={ImageUp}
-            label={isPreparing ? 'Preparing…' : 'Replace photo'}
-            variant="secondary"
-            onFile={replacePhoto}
-            disabled={busy}
-          />
-          <button type="button" className="button button--ghost" onClick={removePhoto} disabled={busy}>
-            <Trash2 size={20} aria-hidden />
-            Remove
-          </button>
+          )}
         </div>
-      </div>
-    </main>
+
+        <section className="card review__panel enter" style={{ '--i': 1 }} aria-live="polite">
+          {isScanning ? (
+            <div className="scan-status" role="status">
+              <span className="scan-status__icon">
+                <ScanLine size={26} aria-hidden />
+              </span>
+              <h1 className="panel-title">Analyzing your plant…</h1>
+              <p className="muted">Looking at leaf shape, flowers and texture to find the closest species.</p>
+              <div className="progress" aria-hidden>
+                <span />
+              </div>
+            </div>
+          ) : problem ? (
+            <div className="problem">
+              <span className="problem__icon">
+                <ProblemIcon size={26} aria-hidden />
+              </span>
+              <h1 className="panel-title">{problem.title}</h1>
+              {problem.message && <p className="muted">{problem.message}</p>}
+            </div>
+          ) : (
+            <>
+              <p className="eyebrow">Step 2 of 3 · Review</p>
+              <h1 className="panel-title">Ready to identify</h1>
+              <ul className="checklist">
+                {TIPS.map((tip) => (
+                  <li key={tip}>
+                    <CircleCheck size={18} aria-hidden />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {fileError && (
+            <div className="alert alert--danger" role="alert">
+              <ImageOff size={18} aria-hidden />
+              <span>{fileError}</span>
+            </div>
+          )}
+
+          {!isScanning && (
+            <div className="review__actions">
+              <button type="button" className="button button--primary button--lg" onClick={scan} disabled={busy}>
+                {problem ? <RotateCcw size={20} aria-hidden /> : <ScanLine size={20} aria-hidden />}
+                {problem ? 'Try again' : 'Scan plant'}
+              </button>
+              <div className="review__secondary">
+                {fromCamera ? (
+                  <Link href="/camera" replace className="button button--secondary">
+                    <Camera size={20} aria-hidden />
+                    Retake
+                  </Link>
+                ) : (
+                  <FileButton
+                    icon={ImageUp}
+                    label={isPreparing ? 'Preparing…' : 'Replace'}
+                    variant="secondary"
+                    onFile={replacePhoto}
+                    disabled={busy}
+                  />
+                )}
+                <button type="button" className="button button--ghost" onClick={removePhoto} disabled={busy}>
+                  <Trash2 size={18} aria-hidden />
+                  Remove
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    </>
   );
 }

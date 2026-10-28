@@ -1,14 +1,21 @@
+import { ListOrdered } from 'lucide-react';
+
 import { displayName, hasCommonName } from '@/lib/plantNames';
 
 import ConfidenceBar, { confidenceLevel } from './ConfidenceBar';
 
 /** Lists candidate matches returned by the identification service. */
-export default function AlternativeMatches({ matches, title = 'Other possible matches', numbered = false }) {
+export default function AlternativeMatches({ matches, title = 'Other possible matches', numbered = false, style }) {
   if (!matches?.length) return null;
 
   return (
-    <section className="card">
-      <h2 className="card__title">{title}</h2>
+    <section className="card enter" style={style}>
+      <h2 className="card__title">
+        <span className="card__title-icon">
+          <ListOrdered size={18} aria-hidden />
+        </span>
+        {title}
+      </h2>
       {matches.map((match, index) => (
         <div key={match.scientificName} className="alt">
           <div className="alt__row">

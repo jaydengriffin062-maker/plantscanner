@@ -22,7 +22,7 @@ export default function HistoryItem({ record, onDelete }) {
           <strong className="truncate">{displayName(best)}</strong>
           {hasCommonName(best) && <em className="truncate">{best.scientificName}</em>}
           <div className="history-item__meta">
-            <span className={`text-${confidenceLevel(best.confidence)}`}>
+            <span className={`chip chip--${confidenceLevel(best.confidence)}`}>
               {best.confidence.toFixed(0)}% match
             </span>
             <span>{date}</span>

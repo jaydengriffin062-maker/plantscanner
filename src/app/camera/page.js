@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, ImageUp, LoaderCircle, SwitchCamera, X, Zap, ZapOff } from 'lucide-react';
+import { Camera, CameraOff, ImageUp, LoaderCircle, SwitchCamera, X, Zap, ZapOff } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -17,6 +17,7 @@ export default function CameraPage() {
   const [facingMode, setFacingMode] = useState('environment');
   const [status, setStatus] = useState('starting'); // starting | live | error
   const [cameraError, setCameraError] = useState(null);
+  const [cameraBlocked, setCameraBlocked] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [canSwitch, setCanSwitch] = useState(false);
@@ -70,6 +71,7 @@ export default function CameraPage() {
       } catch (err) {
         if (cancelled) return;
         setStatus('error');
+        setCameraBlocked(err?.name === 'NotAllowedError' || err?.name === 'SecurityError');
         setCameraError(describeCameraError(err));
       }
     }
@@ -105,7 +107,7 @@ export default function CameraPage() {
     setIsCapturing(true);
     setFlashKey((key) => key + 1);
     try {
-      startFromSource(video, { replace: true });
+      startFromSource(video, { replace: true, origin: 'camera' });
     } catch {
       setIsCapturing(false);
       setCameraError('Could not take the photo. Please try again.');
@@ -113,6 +115,7 @@ export default function CameraPage() {
   }, [status, isCapturing, startFromSource]);
 
   const handleFile = (file) => startFromFile(file, { replace: true });
+  const handleCapturedFile = (file) => startFromFile(file, { replace: true, origin: 'camera' });
 
   return (
     <main className="camera">
@@ -127,12 +130,17 @@ export default function CameraPage() {
 
       {status === 'error' ? (
         <div className="camera__fallback">
-          <EmptyState icon={Camera} title="Live camera unavailable" message={cameraError}>
+          <EmptyState
+            icon={CameraOff}
+            tone={cameraBlocked ? 'danger' : 'warning'}
+            title={cameraBlocked ? 'Camera access is blocked' : 'Live camera unavailable'}
+            message={cameraError}
+          >
             <FileButton
               icon={Camera}
               label="Open phone camera"
               capture="environment"
-              onFile={handleFile}
+              onFile={handleCapturedFile}
               disabled={isPreparing}
             />
             <FileButton
@@ -146,7 +154,11 @@ export default function CameraPage() {
               Go back
             </Link>
           </EmptyState>
-          {fileError && <p className="error-text">{fileError}</p>}
+          {fileError && (
+            <p className="error-text" role="alert">
+              {fileError}
+            </p>
+          )}
         </div>
       ) : (
         <>
@@ -163,7 +175,8 @@ export default function CameraPage() {
           </div>
 
           <div className="camera__guide" aria-hidden>
-            <div className="camera__frame">
+            <div className={`camera__frame ${status === 'live' ? 'camera__frame--live' : ''}`}>
+              <span className="camera__sweep" />
               <span className="corner corner--tl" />
               <span className="corner corner--tr" />
               <span className="corner corner--bl" />

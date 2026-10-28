@@ -1,11 +1,11 @@
 'use client';
 
-import { Camera, Leaf } from 'lucide-react';
+import { Camera, Leaf, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
+import AppHeader from '@/components/AppHeader';
 import EmptyState from '@/components/EmptyState';
 import HistoryItem from '@/components/HistoryItem';
-import PageHeader from '@/components/PageHeader';
 import { displayName } from '@/lib/plantNames';
 import { clearHistory, removeFromHistory, useHistory } from '@/lib/scanStorage';
 
@@ -23,36 +23,43 @@ export default function HistoryPage() {
   };
 
   return (
-    <main className="page page--flush">
-      <PageHeader
-        title="Scan history"
-        action={
-          history?.length > 0 && (
-            <button type="button" className="text-button text-danger" onClick={confirmClearAll}>
-              Clear
+    <>
+      <AppHeader />
+      <main className="container history">
+        <div className="page-title">
+          <div>
+            <h1 className="display display--sm">Scan history</h1>
+            <p className="muted">Saved on this device, so you can open them again even offline.</p>
+          </div>
+          {history?.length > 0 && (
+            <button type="button" className="button button--ghost button--danger" onClick={confirmClearAll}>
+              <Trash2 size={18} aria-hidden />
+              Clear all
             </button>
-          )
-        }
-      />
-
-      {history !== null && history.length === 0 ? (
-        <EmptyState
-          icon={Leaf}
-          title="No scans yet"
-          message="Plants you identify are saved here so you can look them up again, even offline."
-        >
-          <Link href="/camera" className="button button--primary">
-            <Camera size={22} aria-hidden />
-            Scan a plant
-          </Link>
-        </EmptyState>
-      ) : (
-        <div className="stack history-list">
-          {(history ?? []).map((record) => (
-            <HistoryItem key={record.id} record={record} onDelete={() => confirmDelete(record)} />
-          ))}
+          )}
         </div>
-      )}
-    </main>
+
+        {history !== null && history.length === 0 ? (
+          <div className="card">
+            <EmptyState
+              icon={Leaf}
+              title="No scans yet"
+              message="Plants you identify are saved here so you can look them up again, even offline."
+            >
+              <Link href="/" className="button button--primary">
+                <Camera size={20} aria-hidden />
+                Scan a plant
+              </Link>
+            </EmptyState>
+          </div>
+        ) : (
+          <div className="history-grid">
+            {(history ?? []).map((record) => (
+              <HistoryItem key={record.id} record={record} onDelete={() => confirmDelete(record)} />
+            ))}
+          </div>
+        )}
+      </main>
+    </>
   );
 }
