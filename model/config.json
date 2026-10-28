@@ -13,14 +13,14 @@
     0.225
   ],
   "metrics": {
-    "epoch": 2,
-    "val_top1": 0.4766022712439629,
-    "val_top5": 0.7071041639472654
+    "epoch": 12,
+    "val_top1": 0.7446645346560501,
+    "val_top5": 0.8802701997128313
   },
   "onnx_check": {
-    "samples": 2000,
-    "top1_agreement": 0.9415,
-    "torch_top1": 0.4815,
-    "onnx_int8_top1": 0.4795
+    "samples": 1000,
+    "top1_agreement": 0.964,
+    "torch_top1": 0.744,
+    "onnx_int8_top1": 0.742
   }
 }
